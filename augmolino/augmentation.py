@@ -1,5 +1,6 @@
 # needed imports
 import librosa as lr
+import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 import soundfile as sf
@@ -10,7 +11,7 @@ def spectrogram(fp_source):
     X = lr.stft(x)
     Xdb = lr.amplitude_to_db(abs(X))
     plt.figure(figsize=(14, 5))
-    lr.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
+    librosa.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
     plt.colorbar()
 
 
