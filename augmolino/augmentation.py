@@ -55,7 +55,7 @@ def offsetAudio(fp_source, fp_dest, s):
 # create fade-in/fade-out
 # direction = "out": fadeout
 # direction = "in": fadein
-def fadeAudio(fp_source, fp_dest, s, direction):
+def fadeAudio(fp_source, fp_dest, s, direction="in"):
     x, sr = lr.load(fp_source)
     fade_len = sr * s
     if direction == "out":   
