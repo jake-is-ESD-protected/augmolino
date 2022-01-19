@@ -75,9 +75,9 @@ Create a logarithmic fade for `s` seconds of the copied file. Use `direction="in
 def fuseAudio(fp_source_sound, fp_source_noise, fp_dest, lvl_ratio)
 ```
 
-> Returns redundant path `fp_dest`
+> Returns redundant path `fp_dest` and start-time `time_stamp` of mixing with `fp_source_noise`
 
-Mix `fp_source_sound` and `fp_source_noise` for the lenght of `fp_source_sound` by a `lvl_ratio` between `0` and `1`. This can be used to modify a complete dataset with artificial noise to make it more robust.
+Mix `fp_source_sound` and `fp_source_noise` for the lenght of `fp_source_sound` by a `lvl_ratio` between `0` and `1`. A random part of `fp_source_noise` is used to mix. This can be used to modify a complete dataset with artificial noise to make it more robust.
 
 <br />
 <br />
