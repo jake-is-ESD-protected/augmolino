@@ -41,16 +41,13 @@ def pitchShift(fp_source, fp_dest, factor):
 def offsetAudio(fp_source, fp_dest, s):
     x, sr = lr.load(fp_source)
     sample_offs = sr * abs(s)
-    
+    if len(x) <= sample_offs:
+        return None
     if s < 0:
-        if len(x) <= sample_offs:
-            return None
-        for i in range(sample_offs):
-            x = np.append(x, 0)
-            x = np.delete(x, i)  
+        x = np.copy(x[sample_offs: ])
     else:
         for i in range(sample_offs):
-            x = np.insert(x, 0, 0)      
+            x = np.insert(x, 0, 0)  
     sf.write(fp_dest, x, sr)        
     return fp_dest
 
