@@ -39,7 +39,7 @@ Stretch copy of source file by a factor around `1` and save it to `fp_dest`. Pit
 <br />
 
 ```python
-def picthShift(fp_source, fp_dest, factor)
+def pitchShift(fp_source, fp_dest, factor)
 ```
 
 > Returns redundant path `fp_dest`
