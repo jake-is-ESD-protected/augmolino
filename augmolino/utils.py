@@ -1,9 +1,36 @@
+# ------[augmolino]------
+#   @ name: augmolino.utils
+#   @ auth: Jakob Tschavoll
+#   @ vers: 0.1
+#   @ date: 2022
+
+
+"""
+Utility functions for WAV-files and augmolino-specific methods
+"""
+
 import matplotlib.pyplot as plt
 import librosa.display
 import librosa as lr
 
-# render spectrogram of a stored audio-file
+__all__ = ['spectrogram']
+
+
+
 def spectrogram(signal, _sr=22050):
+    """
+    Draw a spectrogram of the specified signal
+
+    Params
+    ------
+    `signal`:   Audio data in array format
+    `_sr`:      Desired sample rate of audio
+
+    Returns
+    -------
+    `fp_dest`:      redundant path `fp_dest`
+    """
+
     try:
         x, sr = lr.load(signal)
     except TypeError:
