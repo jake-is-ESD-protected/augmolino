@@ -76,7 +76,7 @@ class _augmentation:
 
     def load(self):
 
-        x, sr = lr.load(self.f_source, self.sample_rate)
+        x, sr = lr.load(path=self.f_source, sr=self.sample_rate)
         self.signal = x
 
     def _autoName(self, descriptor, param):
@@ -123,7 +123,7 @@ class timeStretch(_augmentation):
     def run(self):
 
         self.load()
-        x_new = lr.effects.time_stretch(self.signal, self.rate)
+        x_new = lr.effects.time_stretch(y=self.signal, rate=self.rate)
 
         if self.f_dest != None:
             sf.write(self.f_dest, x_new, self.sample_rate)
@@ -172,8 +172,8 @@ class pitchShift(_augmentation):
     def run(self):
 
         self.load()
-        x_new = lr.effects.pitch_shift(self.signal,
-                                       self.sample_rate, self.semitones)
+        x_new = lr.effects.pitch_shift(y=self.signal,
+                                       sr=self.sample_rate, n_steps=self.semitones)
 
         if self.f_dest != None:
             sf.write(self.f_dest, x_new, self.sample_rate)
@@ -358,7 +358,7 @@ class mixAudio(_augmentation):
     def run(self):
 
         self.load()
-        noise, _ = lr.load(self.f_source_mix,
+        noise, _ = lr.load(path=self.f_source_mix,
                            sr=self.sample_rate)
         if self.start_at == None:
             # use value of center sample as seed
