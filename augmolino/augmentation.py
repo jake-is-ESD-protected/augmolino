@@ -9,17 +9,18 @@ import librosa as lr
 import numpy as np
 import soundfile as sf
 import random as rd
+import os
 
 __all__ = ['timeStretch', 'pitchShift',
            'offsetAudio', 'fadeAudio', 'mixAudio']
 
 descriptors = {
     "_augmentation": "base class",
-    __all__[0]: "time stretch",
-    __all__[1]: "pitch shift",
-    __all__[2]: "time offset",
-    __all__[3]: "time fade",
-    __all__[4]: "sound mix"}
+    __all__[0]: "time_stretch",
+    __all__[1]: "pitch_shift",
+    __all__[2]: "time_offset",
+    __all__[3]: "time_fade",
+    __all__[4]: "sound_mix"}
 
 
 class _augmentation:
@@ -45,6 +46,13 @@ class _augmentation:
 
     def __init__(self, f_source, f_dest=None, sample_rate=22050):
 
+        path_details = os.path.splitext(f_source)
+        extension = path_details[1]
+        self.auto_name = False
+
+        if extension != ".wav":
+            raise ValueError("File type not supported! Use '.wav' instead.")
+
         self.f_source = f_source
         self.sample_rate = sample_rate
         self.descriptor = descriptors["_augmentation"]
@@ -54,7 +62,13 @@ class _augmentation:
             if f_source == f_dest:
                 warnings.warn("Source and save name are the same,\
                     original file will be overwritten!")
-            self.f_dest = f_dest
+                self.f_dest = f_dest
+            elif f_dest == "auto":
+                # name target file later in specific augmentation
+                self.auto_name = True
+                self.f_dest = None
+            else:
+                self.f_dest = f_dest
 
         # user wants a temporary array
         else:
@@ -64,6 +78,9 @@ class _augmentation:
 
         x, sr = lr.load(self.f_source, self.sample_rate)
         self.signal = x
+
+    def _autoName(self, descriptor, param):
+        self.f_dest = self.f_source[:-4] + f"_{descriptor}_{param}.wav"
 
 
 class timeStretch(_augmentation):
@@ -99,6 +116,9 @@ class timeStretch(_augmentation):
                          f_dest=f_dest, sample_rate=sample_rate)
         self.rate = rate
         self.descriptor = descriptors[__all__[0]]
+
+        if self.auto_name:
+            self._autoName(self.descriptor, rate)
 
     def run(self):
 
@@ -146,6 +166,9 @@ class pitchShift(_augmentation):
         self.semitones = semitones
         self.descriptor = descriptors[__all__[1]]
 
+        if self.auto_name:
+            self._autoName(self.descriptor, semitones)
+
     def run(self):
 
         self.load()
@@ -192,6 +215,9 @@ class offsetAudio(_augmentation):
                          f_dest=f_dest, sample_rate=sample_rate)
         self.s = s
         self.descriptor = descriptors[__all__[2]]
+
+        if self.auto_name:
+            self._autoName(self.descriptor, s)
 
     def run(self):
 
@@ -245,13 +271,16 @@ class fadeAudio(_augmentation):
                  direction="in", sample_rate=22050):
 
         if direction not in ["in", "out"]:
-            raise ValueError(f"parameter '{direction}' not recognised!")
+            raise ValueError(f"parameter '{direction}' not recognized!")
 
         super().__init__(f_source=f_source,
                          f_dest=f_dest, sample_rate=sample_rate)
         self.s = s
         self.direction = direction
         self.descriptor = descriptors[__all__[3]]
+
+        if self.auto_name:
+            self._autoName(self.descriptor, str(s) + f"_{direction}")
 
     def run(self):
 
@@ -322,6 +351,9 @@ class mixAudio(_augmentation):
         self.ratio = ratio
         self.start_at = start_at
         self.descriptor = descriptors[__all__[4]]
+
+        if self.auto_name:
+            self._autoName(self.descriptor, ratio)
 
     def run(self):
 
