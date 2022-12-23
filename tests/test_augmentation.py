@@ -80,3 +80,31 @@ def test_fadeAudio_class():
     assert a.descriptor == aug.descriptors[aug.__all__[3]]
 
     x = a.run()
+
+
+def test_save_file():
+
+    path = "testfile.wav"
+    a = aug.timeStretch(test_file, f_dest=path, rate=0.5)
+
+    x = a.run()
+
+    assert x == None
+    assert os.path.exists(path)
+
+    os.remove(path)
+
+
+def test_save_file_auto():
+
+    path = "auto"
+    test_rate = 0.5
+    a = aug.timeStretch(test_file, f_dest=path, rate=test_rate)
+
+    x = a.run()
+
+    assert x == None
+    target_path = f"{test_file[:-4]}_{a.descriptor}_{test_rate}.wav"
+    assert os.path.exists(target_path)
+
+    os.remove(target_path)
