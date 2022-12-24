@@ -9,7 +9,6 @@ setup(name='augmolino',
       author='Jakob Tschavoll',
       author_email='jt@tschavoll.at',
       license='MIT',
-      packages=['augmolino'],
       classifiers=[],
       keywords=["ML", "augmentation", "audio"],
       zip_safe=False)
