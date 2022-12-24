@@ -1,5 +1,6 @@
 from augmolino import augmenter, augmentation
 import numpy as np
+import os
 
 
 def test_empty_augmenter_init():
@@ -56,5 +57,32 @@ def test_augmenter_run_array():
     assert len(xs) == len(augs)
 
 
+def test_augmenter_run_save():
+
+    fnames = ["targetfile1.wav",
+              "targetfile2.wav",
+              "targetfile3.wav"]
+
+    augs = [
+        augmentation.timeStretch(
+            "tests/sounds/impulse_response.wav", fnames[0], rate=2),
+        augmentation.pitchShift(
+            "tests/sounds/impulse_response.wav", fnames[1], semitones=2),
+        augmentation.offsetAudio(
+            "tests/sounds/impulse_response.wav", fnames[2], s=1)]
+
+    a = augmenter.augmenter(augs)
+
+    xs = a.execute()
+
+    assert xs == [[None]] * len(fnames)
+    print(xs)
+
+    for fname in fnames:
+        assert os.path.exists(fname)
+        os.remove(fname)
+
+
 # this can only be tested visually by a human
 test_augmenter_summary()
+test_augmenter_run_save()
