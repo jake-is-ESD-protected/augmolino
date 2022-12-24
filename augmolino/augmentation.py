@@ -1,9 +1,3 @@
-# ------[augmolino]------
-#   @ name: augmolino.augmentation
-#   @ auth: Jakob Tschavoll
-#   @ vers: 0.1
-#   @ date: 2022
-
 import warnings
 import librosa as lr
 import numpy as np

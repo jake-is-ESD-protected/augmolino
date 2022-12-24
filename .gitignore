@@ -136,3 +136,5 @@ lib
 pyvenv.cfg
 explore.ipynb
 share
+
+.vscode

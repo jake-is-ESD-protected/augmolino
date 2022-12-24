@@ -1,11 +1,15 @@
 from setuptools import setup
 
 setup(name='augmolino',
-      version='0.2',
-      description='small plugin for file-based easy to use audio data augmentation',
-      url=' ',
+      packages=['augmolino'],
+      version='0.0.1',
+      description='augmentation for audio based datasets for machine learning',
+      url='https://github.com/jake-is-ESD-protected/augmolino',
+      download_url="",
       author='Jakob Tschavoll',
-      author_email='jakob@tschavoll.at',
+      author_email='jt@tschavoll.at',
       license='MIT',
       packages=['augmolino'],
+      classifiers=[],
+      keywords=["ML", "augmentation", "audio"],
       zip_safe=False)
