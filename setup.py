@@ -8,7 +8,12 @@ setup(name='augmolino',
       download_url="https://github.com/jake-is-ESD-protected/augmolino/archive/refs/tags/0.0.1.tar.gz",
       author='Jakob Tschavoll',
       author_email='jt@tschavoll.at',
-      license='MIT',
+      license='GPL 3.0',
       classifiers=[],
       keywords=["ML", "augmentation", "audio"],
-      zip_safe=False)
+      zip_safe=False,
+      install_requires=[
+          'numpy',
+          'scipy',
+          'librosa',
+          'soundfile'])
