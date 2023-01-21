@@ -61,7 +61,8 @@ class _augmentation:
             path to file which should be augmented. Must be in wav format.
         `f_dest`:
             path to augmented file which will be saved. If left unspecified,
-            a `numpy` array of the augmented signal is returned instead. Default
+            a `numpy` array of the augmented signal is returned instead. Pass
+            `"auto"` to store in the source with unique names. Default
             is `None`.   
         """
         self._load(f_source)
