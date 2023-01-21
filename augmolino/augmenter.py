@@ -1,5 +1,7 @@
 from augmolino import augmentation
 import numpy as np
+import os
+from collections.abc import Sequence
 
 
 class augmenter:
@@ -73,7 +75,7 @@ class augmenter:
         """
         self.pipe.append(augmentation)
 
-    def execute(self):
+    def execute(self, source, dest=None):
         """
         Run all augmentations within the pipe. Specific settings are
         inside of each augmentation.
@@ -87,17 +89,35 @@ class augmenter:
             filled with single `None` values.
 
         """
+
+        # source given as a list of file paths
+        if isinstance(source, (list, tuple, np.ndarray)):
+            files = source
+
+        # single source path to file
+        if os.path.isfile(source):
+            files = [source]
+
+        # source given as parent folder
+        if os.path.isdir(source):
+            if dest == None:
+                raise ValueError("Augmenter without save directory "\
+                    "pointed to multiple files. Did you forget "\
+                    "to specify a path?")
+            files = [os.path.join(source, file) for file in os.listdir(source) if file.lower().endswith("wav")]
+
+        if dest == None:
+            xs = [[]] * len(self.pipe)
+        else:
+            xs = None
         # this is sloooow but the only way to append dynamic sizes
-        xs = [[]] * len(self.pipe)
         for i, augmentation in enumerate(self.pipe):
-            x = augmentation.run()
+            for file in files:
+                x = augmentation.run(file, dest)
 
-            if augmentation.f_dest == None:
-                xs[i].append(x)
-
-            else:
-                xs[i].append(None)
-            xs[i] = np.asarray(xs[i][i])
+                if dest == None:
+                    xs[i].append(x)
+                    xs[i] = np.asarray(xs[i][i])
 
         return xs
 
@@ -110,10 +130,10 @@ class augmenter:
         print("-----------------------------------------")
         print(f" number of augmentations: {num_aug}     ")
         print("")
-        print(" type:           Source:                 ")
+        print(" type:                                   ")
 
         for aug in self.pipe:
-            print(f" > {aug.descriptor}: {aug.f_source}")
+            print(f" > {aug.descriptor}                 ")
 
         print("------------augmenter.summary------------")
         print("")
