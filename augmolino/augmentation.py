@@ -25,12 +25,15 @@ class _augmentation:
 
     Parameters
     ----------
-    `f_source`:
-        path-like string to file which should be augmented
-    `f_dest`:
-        path-like string to preferred storage location or name
     `sample_rate`:
-        sample rate of audio file (used for resampling)    
+        sample rate of audio file (used for resampling). Default
+        is `22050`.
+    `function`:
+        function which applies the augmentation to the signal
+        array. Can be used to reference internal functions or
+        functions provided by other modules. Default is `None`.
+    `kwargs`:
+        Arguments for `function`.
 
     Notes
     -----
@@ -38,43 +41,77 @@ class _augmentation:
     called on its own. Always call an actual augmentation.
     """
 
-    def __init__(self, f_source, f_dest=None, sample_rate=22050):
+    def __init__(self, sample_rate=22050, function=None, **kwargs):
+
+        self.sample_rate = sample_rate
+        self.descriptor = descriptors["_augmentation"]
+        kwargs_vals = [str(arg) for arg in kwargs.values()]
+        self.tag = ('_'.join(kwargs_vals)).replace('.', '_')
+        self.function = function
+        self.kwargs = kwargs
+
+    def run(self, f_source, f_dest=None):
+        """
+        Apply the augmentation to a specified file and store 
+        the result as array or other file.
+
+        Parameters
+        ----------
+        `f_source`:
+            path to file which should be augmented. Must be in wav format.
+        `f_dest`:
+            path to augmented file which will be saved. If left unspecified,
+            a `numpy` array of the augmented signal is returned instead. Default
+            is `None`.   
+        """
+        self._load(f_source)
+        self.f_dest = self._parsePath(f_dest)
+        
+        x_new = self._executeFunction()
+
+        if self.f_dest != None:
+            sf.write(self.f_dest, x_new, self.sample_rate)
+            return None
+
+        else:
+            return x_new    
+
+    def _load(self, f_source):
 
         path_details = os.path.splitext(f_source)
         extension = path_details[1]
-        self.auto_name = False
 
         if extension != ".wav":
             raise ValueError("File type not supported! Use '.wav' instead.")
 
         self.f_source = f_source
-        self.sample_rate = sample_rate
-        self.descriptor = descriptors["_augmentation"]
-
-        # user wants to save the augmentation
-        if f_dest != None:
-            if f_source == f_dest:
-                warnings.warn("Source and save name are the same,\
-                    original file will be overwritten!")
-                self.f_dest = f_dest
-            elif f_dest == "auto":
-                # name target file later in specific augmentation
-                self.auto_name = True
-                self.f_dest = None
-            else:
-                self.f_dest = f_dest
-
-        # user wants a temporary array
-        else:
-            self.f_dest = None
-
-    def load(self):
 
         x, sr = lr.load(path=self.f_source, sr=self.sample_rate)
         self.signal = x
 
-    def _autoName(self, descriptor, param):
-        self.f_dest = self.f_source[:-4] + f"_{descriptor}_{param}.wav"
+    def _parsePath(self, f_dest):
+        # user wants to save the augmentation
+        if f_dest != None:
+            if self.f_source == f_dest:
+                warnings.warn("Source and save name are the same,\
+                    original file will be overwritten!")
+                return f_dest
+            elif f_dest == "auto":
+                return self._autoName(self.descriptor, self.tag)
+            else:
+                return f_dest
+
+        # user wants a temporary array
+        else:
+            return None
+
+    def _autoName(self, descriptor, tag):
+        if self.f_source == None:
+            raise ValueError("No source to autoname from!")
+        return self.f_source[:-4] + f"_{descriptor}_{tag}.wav" 
+
+    def _executeFunction(self):
+        return self.function(self.signal, **self.kwargs)
 
 
 class timeStretch(_augmentation):
@@ -83,11 +120,6 @@ class timeStretch(_augmentation):
 
     Parameters
     ----------
-    `f_source`:
-        String. Path-like string to file which should be augmented
-    `f_dest`:
-        String. Path-like string to preferred storage location or name.
-        Default is `None`
     `rate`:
         Float. Stretch factor defined by speed of playback. A `rate` < 1
         stretches the sound, a `rate` > 1 squeezes it.
@@ -95,36 +127,14 @@ class timeStretch(_augmentation):
     `sample_rate`:
         Int. Sample rate of audio file (used for resampling).
         Default is `22050`
-
-    Returns
-    -------
-    `None`:
-        If `f_dest` was set
-    `x`:
-        Array. Numpy array containing augmented signal
     """
 
-    def __init__(self, f_source,
-                 f_dest=None, rate=1, sample_rate=22050):
-        super().__init__(f_source=f_source,
-                         f_dest=f_dest, sample_rate=sample_rate)
+    def __init__(self, rate=1, sample_rate=22050):
         self.rate = rate
-        self.descriptor = descriptors[__all__[0]]
-
-        if self.auto_name:
-            self._autoName(self.descriptor, rate)
-
-    def run(self):
-
-        self.load()
-        x_new = lr.effects.time_stretch(y=self.signal, rate=self.rate)
-
-        if self.f_dest != None:
-            sf.write(self.f_dest, x_new, self.sample_rate)
-            return None
-
-        else:
-            return x_new
+        super().__init__(sample_rate=sample_rate, 
+                         function=lr.effects.time_stretch,
+                         rate=rate)
+        self.descriptor = descriptors[__all__[0]]  
 
 
 class pitchShift(_augmentation):
@@ -133,48 +143,21 @@ class pitchShift(_augmentation):
 
     Parameters
     ----------
-    `f_source`:
-        String. Path-like string to file which should be augmented
-    `f_dest`:
-        String. Path-like string to preferred storage location or name.
-        Default is `None`
     `semitones`:
         Float. Number of western scale semitones to shift up or down.
         Default is `1`
     `sample_rate`:
         Int. Sample rate of audio file (used for resampling).
         Default is `22050`
-
-    Returns
-    -------
-    `None`:
-        If `f_dest` was set
-    `x`:
-        Array. Numpy array containing augmented signal
     """
 
-    def __init__(self, f_source,
-                 f_dest=None, semitones=1, sample_rate=22050):
-        super().__init__(f_source=f_source,
-                         f_dest=f_dest, sample_rate=sample_rate)
+    def __init__(self, semitones=1, sample_rate=22050):
         self.semitones = semitones
-        self.descriptor = descriptors[__all__[1]]
-
-        if self.auto_name:
-            self._autoName(self.descriptor, semitones)
-
-    def run(self):
-
-        self.load()
-        x_new = lr.effects.pitch_shift(y=self.signal,
-                                       sr=self.sample_rate, n_steps=self.semitones)
-
-        if self.f_dest != None:
-            sf.write(self.f_dest, x_new, self.sample_rate)
-            return None
-
-        else:
-            return x_new
+        super().__init__(sample_rate=sample_rate, 
+                         function=lr.effects.pitch_shift,
+                         sr=sample_rate,
+                         n_steps=semitones)
+        self.descriptor = descriptors[__all__[1]]  
 
 
 class offsetAudio(_augmentation):
@@ -183,54 +166,31 @@ class offsetAudio(_augmentation):
 
     Parameters
     ----------
-    `f_source`:
-        String. Path-like string to file which should be augmented
-    `f_dest`:
-        String. Path-like string to preferred storage location or name.
-        Default is `None`
     `s`:
         Float. Offset in seconds. s < 0: skip first samples. 
         s > 0: add dead-time to start. Default is `0`.
     `sample_rate`:
         Int. Sample rate of audio file (used for resampling).
         Default is `22050`
-
-    Returns
-    -------
-    `None`:
-        If `f_dest` was set
-    `x`:
-        Array. Numpy array containing augmented signal
     """
 
-    def __init__(self, f_source,
-                 f_dest=None, s=0, sample_rate=22050):
-        super().__init__(f_source=f_source,
-                         f_dest=f_dest, sample_rate=sample_rate)
+    def __init__(self, s=0, sample_rate=22050):
         self.s = s
+        super().__init__(sample_rate=sample_rate,
+                         function=self._offset,
+                         s=s)
         self.descriptor = descriptors[__all__[2]]
 
-        if self.auto_name:
-            self._autoName(self.descriptor, s)
+    def _offset(self, y, s):
 
-    def run(self):
+        sample_offs = int(self.sample_rate * abs(s))
 
-        self.load()
-        sample_offs = int(self.sample_rate * abs(self.s))
-
-        if len(self.signal) <= sample_offs:
+        if len(y) <= sample_offs:
             raise ValueError("Offset longer than duration of sound!")
-        if self.s < 0:
-            x_new = self.signal[sample_offs:]
+        if s < 0:
+            return y[sample_offs:]
         else:
-            x_new = np.insert(self.signal, 0, np.zeros(sample_offs))
-
-        if self.f_dest != None:
-            sf.write(self.f_dest, x_new, self.sample_rate)
-            return None
-
-        else:
-            return x_new
+            return np.insert(y, 0, np.zeros(sample_offs))
 
 
 class fadeAudio(_augmentation):
@@ -239,11 +199,6 @@ class fadeAudio(_augmentation):
 
     Parameters
     ----------
-    `f_source`:
-        String. Path-like string to file which should be augmented
-    `f_dest`:
-        String. Path-like string to preferred storage location or name.
-        Default is `None`
     `s`:
         Float. Fade time in seconds. Default is `0`.
     `direction`:
@@ -252,38 +207,29 @@ class fadeAudio(_augmentation):
     `sample_rate`:
         Int. Sample rate of audio file (used for resampling).
         Default is `22050`
-
-    Returns
-    -------
-    `None`:
-        If `f_dest` was set
-    `x`:
-        Array. Numpy array containing augmented signal
     """
 
-    def __init__(self, f_source, f_dest=None, s=0,
-                 direction="in", sample_rate=22050):
-
+    def __init__(self, s=0, direction="in", sample_rate=22050):
+        self.s = s
+        self.direction = direction
         if direction not in ["in", "out"]:
             raise ValueError(f"parameter '{direction}' not recognized!")
 
-        super().__init__(f_source=f_source,
-                         f_dest=f_dest, sample_rate=sample_rate)
+        super().__init__(sample_rate=sample_rate,
+                         function=self._fade,
+                         s=s,
+                         direction=direction)
         self.s = s
         self.direction = direction
         self.descriptor = descriptors[__all__[3]]
 
-        if self.auto_name:
-            self._autoName(self.descriptor, str(s) + f"_{direction}")
+    def _fade(self, y, s, direction):
 
-    def run(self):
+        fade_len = self.sample_rate * s
+        x_new = y
 
-        self.load()
-        fade_len = self.sample_rate * self.s
-        x_new = self.signal
-
-        if self.direction == "out":
-            end = len(self.signal)
+        if direction == "out":
+            end = len(y)
             start = end - fade_len
             fade_curve = np.logspace(0, -3, fade_len)
             x_new[start:end] *= fade_curve
@@ -291,12 +237,7 @@ class fadeAudio(_augmentation):
             fade_curve = np.logspace(-3, 0, fade_len)
             x_new[0:fade_len] *= fade_curve
 
-        if self.f_dest != None:
-            sf.write(self.f_dest, x_new, self.sample_rate)
-            return None
-
-        else:
-            return x_new
+        return x_new    
 
 
 class mixAudio(_augmentation):
@@ -305,13 +246,8 @@ class mixAudio(_augmentation):
 
     Parameters
     ----------
-    `f_source`:
-        String. Path-like string to file which should be augmented
-    `f_source_mix`:
+    `f_mix`:
         String. Path-like string to file which should be mixed in.
-    `f_dest`:
-        String. Path-like string to preferred storage location or name.
-        Default is `None`
     `ratio`:
         Float. Ratio by which the sounds are mixed. 
         `0 <= ratio <= 1`, 1 ignores the noise, 0 the main sound. 
@@ -323,52 +259,34 @@ class mixAudio(_augmentation):
         Int. Sample rate of audio file (used for resampling).
         Default is `22050`
 
-    Returns
-    -------
-    `None`:
-        If `f_dest` was set
-    `x`:
-        Array. Numpy array containing augmented signal
-
     Notes
     -----
     Augmented sound is as long as the original sound of interest, 
     not the mixed-in sound    
     """
 
-    def __init__(self, f_source, f_source_mix, f_dest=None,
-                 ratio=0.5, start_at=None, sample_rate=22050):
-
-        super().__init__(f_source=f_source,
-                         f_dest=f_dest, sample_rate=sample_rate)
-        self.f_source_mix = f_source_mix
+    def __init__(self, f_mix=None, ratio=0.5, start_at=None, sample_rate=22050):
+        self.f_mix = f_mix
+        self.y_mix, _ = lr.load(path=f_mix, sr=sample_rate)
         self.ratio = ratio
         self.start_at = start_at
+        super().__init__(sample_rate=sample_rate,
+                         function=self._mix,
+                         ratio=ratio,
+                         start_at=start_at)
         self.descriptor = descriptors[__all__[4]]
 
-        if self.auto_name:
-            self._autoName(self.descriptor, ratio)
+    def _mix(self, y, ratio, start_at):
 
-    def run(self):
-
-        self.load()
-        noise, _ = lr.load(path=self.f_source_mix,
-                           sr=self.sample_rate)
-        if self.start_at == None:
+        if start_at == None:
             # use value of center sample as seed
-            rd_value = int(1000*self.signal[int(len(self.signal)/2)])
+            rd_value = int(1000*y[int(len(y)/2)])
             rd.seed(rd_value)
-            start = rd.randint(0, len(noise)-len(self.signal))
+            start = rd.randint(0, len(self.y_mix)-len(y))
         else:
-            start = int(self.start_at * self.sample_rate)
+            start = int(start_at * self.sample_rate)
 
-        part_noise = noise[start:(start+len(self.signal))]
+        part_noise = self.y_mix[start:(start+len(y))]
 
-        x_new = self.signal * self.ratio + part_noise * (1 - self.ratio)
+        return y * ratio + part_noise * (1 - ratio)
 
-        if self.f_dest != None:
-            sf.write(self.f_dest, x_new, self.sample_rate)
-            return None
-
-        else:
-            return x_new
