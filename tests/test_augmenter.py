@@ -1,5 +1,4 @@
 from augmolino import augmenter, augmentation
-import numpy as np
 import os
 
 source_dir = "tests/sounds/"
@@ -114,5 +113,3 @@ def test_cleanup():
 
 # this can only be tested visually by a human
 test_augmenter_summary()
-# clean up all augmented files within the source dir
-test_cleanup()
