@@ -144,13 +144,14 @@ def test_mixAudio_class():
     test_f_mix = "tests/sounds/speech.wav"
     test_ratio = 0.5
     test_start_at = 1
-    a = aug.mixAudio(test_f_mix, test_ratio, test_start_at)
+    a = aug.mixAudio(test_ratio, test_start_at)
 
     assert a.descriptor == aug.descriptors[aug.__all__[4]]
     assert a.function == a._mix
     assert len(a.kwargs) == 2
     assert a.tag == "0_5_1"
 
-    x = a.run(test_file, target_path)
+    x = a.run(test_file, target_path, f_mix=test_f_mix)
+    assert len(a.kwargs) == 3
 
     os.remove(target_path)
