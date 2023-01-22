@@ -1,7 +1,6 @@
 from augmolino import augmentation
 import numpy as np
 import os
-from collections.abc import Sequence
 
 
 class augmenter:
@@ -19,14 +18,6 @@ class augmenter:
             can later be filled with augmentations via `augmenter.add()`.
             Default is `None`.
 
-        Notes
-        -----
-        Depending on the `f_dest`-path of every augmentation the augmenter
-        returns either an array of augmented signals from each augmentation
-        or an array of `None` for each augmentation. If a location is 
-        specified, the signals get stored as `.wav`-files. See "Examples"
-        for more info.
-
         Examples
         --------
         >>> # get augmentations as signals and plot them:
@@ -34,16 +25,13 @@ class augmenter:
         >>> import matplotlib.pyplot as plt
         >>> # specify set of augmentations:
         >>> augs = [
-                augmentation.timeStretch(
-                    "tests/sounds/impulse_response.wav", rate=2),
-                augmentation.pitchShift(
-                    "tests/sounds/impulse_response.wav", semitones=2),
-                augmentation.offsetAudio(
-                    "tests/sounds/impulse_response.wav", s=1)]
+                augmentation.timeStretch(rate=2),
+                augmentation.pitchShift(semitones=2),
+                augmentation.offsetAudio(s=1)]
         >>> # create the augmenter
         >>> a = augmenter.augmenter(augs)
         >>> # run augmenter
-        >>> xs = a.execute()
+        >>> xs = a.execute("tests/sounds/impulse_response.wav")
         >>> # create plot
         >>> fig, axs = plt.subplots(3,1)
         >>> # display signals
@@ -75,18 +63,32 @@ class augmenter:
         """
         self.pipe.append(augmentation)
 
-    def execute(self, source, dest=None):
+    def execute(self, source, dest=None, **kwargs):
         """
         Run all augmentations within the pipe. Specific settings are
         inside of each augmentation.
 
+        Parameters
+        ----------
+        `source`:
+            List, String. Source of data. Can be a folder,
+            array of filenames or single files.
+        `dest`:
+            String. Destination for saved augmented files. If `None`
+            is passed, the first augmented signals per augmentation
+            are returned as `numpy` array and not saved. Pass `"auto"`
+            to save them to the source folder under unique IDs generated
+            from the augmentations settings. Default is `None`.
+        `kwargs`:
+            Keyword arguments which were not passed in the initialization
+            of augmentations. They get appended here.
+
         Returns
         -------
         `xs`:
-            Array. Returns each augmented signal if no save location
+            Array, None. Returns each augmented signal if no save location
             has been specified for the coresponding augmentation.
-            Otherwise it returns an array of shape (n_augmentations, )
-            filled with single `None` values.
+            Otherwise it returns `None`.
 
         """
 
@@ -113,7 +115,7 @@ class augmenter:
         # this is sloooow but the only way to append dynamic sizes
         for i, augmentation in enumerate(self.pipe):
             for file in files:
-                x = augmentation.run(file, dest)
+                x = augmentation.run(file, dest, **kwargs)
 
                 if dest == None:
                     xs[i].append(x)
