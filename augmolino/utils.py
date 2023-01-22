@@ -1,44 +1,31 @@
-# ------[augmolino]------
-#   @ name: augmolino.utils
-#   @ auth: Jakob Tschavoll
-#   @ vers: 0.1
-#   @ date: 2022
-
-
-"""
-Utility functions for WAV-files and augmolino-specific methods
-"""
-
 import matplotlib.pyplot as plt
 import librosa.display
 import librosa as lr
+import os
 
-__all__ = ['spectrogram']
+__all__ = ['quickPlotSpectrogram']
 
 
-
-def spectrogram(signal, _sr=22050):
+def quickPlotSpectrogram(signal, sample_rate=22050):
     """
     Draw a spectrogram of the specified signal
 
-    Params
+    Parameters
     ------
-    `signal`:   Audio data in array format
-    `_sr`:      Desired sample rate of audio
-
-    Returns
-    -------
-    `fp_dest`:      redundant path `fp_dest`
+    `y`:
+        Array, String. Path to audio or audio data.
+    `sample_rate`:
+        Desired sample rate of audio. Default is `22050`.
     """
 
-    try:
-        x, sr = lr.load(signal)
-    except TypeError:
-        x = signal
-        sr = _sr
-    print(sr)
+    if os.path.isfile(signal):
+        x, _ = lr.load(signal, sr=sample_rate)
+    else:
+        x = signal    
+
     X = lr.stft(x)
     Xdb = lr.amplitude_to_db(abs(X))
     plt.figure(figsize=(14, 5))
-    librosa.display.specshow(Xdb, sr=sr, x_axis='time', y_axis='hz')
+    librosa.display.specshow(Xdb, sr=sample_rate, x_axis='time', y_axis='hz')
     plt.colorbar()
+    plt.show()
