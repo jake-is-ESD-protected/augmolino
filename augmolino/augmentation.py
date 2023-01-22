@@ -45,12 +45,18 @@ class _augmentation:
 
         self.sample_rate = sample_rate
         self.descriptor = descriptors["_augmentation"]
-        kwargs_vals = [str(arg) for arg in kwargs.values()]
-        self.tag = ('_'.join(kwargs_vals)).replace('.', '_')
         self.function = function
         self.kwargs = kwargs
-
-    def run(self, f_source, f_dest=None):
+        # use all kwargs values to create a unique ID
+        kwargs_vals = []
+        for arg in kwargs.values():
+            if isinstance(arg, str):
+                if "/" in arg or "\\" in arg:
+                    arg = self._shortenName(arg)
+            kwargs_vals.append(str(arg))
+        self.tag = ('_'.join(kwargs_vals)).replace('.', '_')
+        
+    def run(self, f_source, f_dest=None, **kwargs):
         """
         Apply the augmentation to a specified file and store 
         the result as array or other file.
@@ -63,10 +69,15 @@ class _augmentation:
             path to augmented file which will be saved. If left unspecified,
             a `numpy` array of the augmented signal is returned instead. Pass
             `"auto"` to store in the source with unique names. Default
-            is `None`.   
+            is `None`.
+        `kwargs`:
+            Arguments for executing of `function`.    
         """
         self._load(f_source)
         self.f_dest = self._parsePath(f_dest)
+
+        # append kwargs in case some are appended after init
+        self.kwargs |= kwargs
         
         x_new = self._executeFunction()
 
@@ -113,6 +124,9 @@ class _augmentation:
 
     def _executeFunction(self):
         return self.function(self.signal, **self.kwargs)
+
+    def _shortenName(self, f_path):
+        return os.path.basename(f_path)[:-4]    
 
 
 class timeStretch(_augmentation):
@@ -266,9 +280,7 @@ class mixAudio(_augmentation):
     not the mixed-in sound    
     """
 
-    def __init__(self, f_mix=None, ratio=0.5, start_at=None, sample_rate=22050):
-        self.f_mix = f_mix
-        self.y_mix, _ = lr.load(path=f_mix, sr=sample_rate)
+    def __init__(self, ratio=0.5, start_at=None, sample_rate=22050):
         self.ratio = ratio
         self.start_at = start_at
         super().__init__(sample_rate=sample_rate,
@@ -277,17 +289,17 @@ class mixAudio(_augmentation):
                          start_at=start_at)
         self.descriptor = descriptors[__all__[4]]
 
-    def _mix(self, y, ratio, start_at):
-
+    def _mix(self, y, f_mix, ratio, start_at):
+        y_mix, _ = lr.load(f_mix, sr=self.sample_rate)
         if start_at == None:
             # use value of center sample as seed
             rd_value = int(1000*y[int(len(y)/2)])
             rd.seed(rd_value)
-            start = rd.randint(0, len(self.y_mix)-len(y))
+            start = rd.randint(0, len(y_mix)-len(y))
         else:
             start = int(start_at * self.sample_rate)
 
-        part_noise = self.y_mix[start:(start+len(y))]
+        part_noise = y_mix[start:(start+len(y))]
 
         return y * ratio + part_noise * (1 - ratio)
 
