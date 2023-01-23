@@ -55,7 +55,7 @@ class _augmentation:
                     arg = self._shortenName(arg)
             kwargs_vals.append(str(arg))
         self.tag = ('_'.join(kwargs_vals)).replace('.', '_')
-        
+
     def run(self, f_source, f_dest=None, **kwargs):
         """
         Apply the augmentation to a specified file and store 
@@ -78,7 +78,7 @@ class _augmentation:
 
         # append kwargs in case some are appended after init
         self.kwargs |= kwargs
-        
+
         x_new = self._executeFunction()
 
         if self.f_dest != None:
@@ -86,7 +86,7 @@ class _augmentation:
             return None
 
         else:
-            return x_new    
+            return x_new
 
     def _load(self, f_source):
 
@@ -120,13 +120,13 @@ class _augmentation:
     def _autoName(self, descriptor, tag):
         if self.f_source == None:
             raise ValueError("No source to autoname from!")
-        return self.f_source[:-4] + f"_{descriptor}_{tag}.wav" 
+        return self.f_source[:-4] + f"_{descriptor}_{tag}.wav"
 
     def _executeFunction(self):
         return self.function(self.signal, **self.kwargs)
 
     def _shortenName(self, f_path):
-        return os.path.basename(f_path)[:-4]    
+        return os.path.basename(f_path)[:-4]
 
 
 class timeStretch(_augmentation):
@@ -146,10 +146,10 @@ class timeStretch(_augmentation):
 
     def __init__(self, rate=1, sample_rate=22050):
         self.rate = rate
-        super().__init__(sample_rate=sample_rate, 
+        super().__init__(sample_rate=sample_rate,
                          function=lr.effects.time_stretch,
                          rate=rate)
-        self.descriptor = descriptors[__all__[0]]  
+        self.descriptor = descriptors[__all__[0]]
 
 
 class pitchShift(_augmentation):
@@ -168,11 +168,11 @@ class pitchShift(_augmentation):
 
     def __init__(self, semitones=1, sample_rate=22050):
         self.semitones = semitones
-        super().__init__(sample_rate=sample_rate, 
+        super().__init__(sample_rate=sample_rate,
                          function=lr.effects.pitch_shift,
                          sr=sample_rate,
                          n_steps=semitones)
-        self.descriptor = descriptors[__all__[1]]  
+        self.descriptor = descriptors[__all__[1]]
 
 
 class offsetAudio(_augmentation):
@@ -252,7 +252,7 @@ class fadeAudio(_augmentation):
             fade_curve = np.logspace(-3, 0, fade_len)
             x_new[0:fade_len] *= fade_curve
 
-        return x_new    
+        return x_new
 
 
 class mixAudio(_augmentation):
@@ -261,8 +261,6 @@ class mixAudio(_augmentation):
 
     Parameters
     ----------
-    `f_mix`:
-        String. Path-like string to file which should be mixed in.
     `ratio`:
         Float. Ratio by which the sounds are mixed. 
         `0 <= ratio <= 1`, 1 ignores the noise, 0 the main sound. 
@@ -291,15 +289,24 @@ class mixAudio(_augmentation):
 
     def _mix(self, y, f_mix, ratio, start_at):
         y_mix, _ = lr.load(f_mix, sr=self.sample_rate)
+        y_len = len(y)
+        y_mix_len = len(y_mix)
+        start = int(start_at * self.sample_rate)
+
+        # use value of center sample as seed
         if start_at == None:
-            # use value of center sample as seed
-            rd_value = int(1000*y[int(len(y)/2)])
+            rd_value = int(1000*y[int(y_len/2)])
             rd.seed(rd_value)
-            start = rd.randint(0, len(y_mix)-len(y))
+
+        if y_len < y_mix_len:
+            if start_at == None:
+                start = rd.randint(0, y_mix_len-y_len)
+            return y * ratio + y_mix[start:start+y_len] * (1-ratio)
         else:
-            start = int(start_at * self.sample_rate)
+            if start_at == None:
+                start = rd.randint(0, y_len-y_mix_len)
+                y_mix_pad = np.append(np.zeros(start), y_mix)
+                y_mix_pad = np.append(
+                    y_mix_pad, np.zeros(y_len-start-y_mix_len))
 
-        part_noise = y_mix[start:(start+len(y))]
-
-        return y * ratio + part_noise * (1 - ratio)
-
+            return y * ratio + y_mix_pad * (1-ratio)
