@@ -291,12 +291,14 @@ class mixAudio(_augmentation):
         y_mix, _ = lr.load(f_mix, sr=self.sample_rate)
         y_len = len(y)
         y_mix_len = len(y_mix)
-        start = int(start_at * self.sample_rate)
+        
 
         # use value of center sample as seed
         if start_at == None:
             rd_value = int(1000*y[int(y_len/2)])
             rd.seed(rd_value)
+        else:
+            start = int(start_at * self.sample_rate)    
 
         if y_len < y_mix_len:
             if start_at == None:

@@ -154,4 +154,9 @@ def test_mixAudio_class():
     x = a.run(test_file, target_path, f_mix=test_f_mix)
     assert len(a.kwargs) == 3
 
+    a = aug.mixAudio(test_ratio)
+    assert a.tag == "0_5_None"
+    x = a.run(test_file, target_path, f_mix=test_f_mix)
+
+
     os.remove(target_path)
