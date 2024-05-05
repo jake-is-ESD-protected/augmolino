@@ -77,7 +77,7 @@ class _augmentation:
         self.f_dest = self._parsePath(f_dest)
 
         # append kwargs in case some are appended after init
-        self.kwargs |= kwargs
+        self.kwargs = {**self.kwargs, **kwargs}
 
         x_new = self._executeFunction()
 
