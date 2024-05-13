@@ -261,6 +261,11 @@ class mixAudio(_augmentation):
 
     Parameters
     ----------
+    `f_mix`:
+        Path or str. Sound which should be mixed onto each sound that
+        gets processed by the augmentation. `f_mix` gets set statically
+        and remains in the specific instance of this augmentation. Careful
+        naming is advised.
     `ratio`:
         Float. Ratio by which the sounds are mixed. 
         `0 <= ratio <= 1`, 1 ignores the noise, 0 the main sound. 
@@ -278,17 +283,18 @@ class mixAudio(_augmentation):
     not the mixed-in sound    
     """
 
-    def __init__(self, ratio=0.5, start_at=None, sample_rate=22050):
+    def __init__(self, f_mix, ratio=0.5, start_at=None, sample_rate=22050):
         self.ratio = ratio
         self.start_at = start_at
+        self.f_mix = f_mix
         super().__init__(sample_rate=sample_rate,
                          function=self._mix,
                          ratio=ratio,
                          start_at=start_at)
         self.descriptor = descriptors[__all__[4]]
 
-    def _mix(self, y, f_mix, ratio, start_at):
-        y_mix, _ = lr.load(f_mix, sr=self.sample_rate)
+    def _mix(self, y, ratio, start_at):
+        y_mix, _ = lr.load(self.f_mix, sr=self.sample_rate)
         y_len = len(y)
         y_mix_len = len(y_mix)
         
